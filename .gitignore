@@ -1,0 +1,5 @@
+Performance.json
+*.html
+reports/
+node_modules/
+.env

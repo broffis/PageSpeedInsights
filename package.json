@@ -1,0 +1,25 @@
+{
+  "name": "pagespeedinsights",
+  "version": "1.0.0",
+  "description": "Page Speed Insights API",
+  "scripts": {
+    "all": "node ./tests/all-pages.js",
+    "select": "node ./tests/psi-checks.js",
+    "choose": "node ./choose-page.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/broffis/PageSpeedInsights.git"
+  },
+  "author": "Brandon Roffis",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/broffis/PageSpeedInsights/issues"
+  },
+  "homepage": "https://github.com/broffis/PageSpeedInsights#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "node-fetch": "^2.6.0",
+    "readline-sync": "^1.4.10"
+  }
+}
