@@ -1,5 +1,6 @@
 Performance.json
 *.html
 reports/
+performance-data/
 node_modules/
 .env

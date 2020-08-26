@@ -5,7 +5,7 @@
   "scripts": {
     "all": "node ./tests/all-pages.js",
     "select": "node ./tests/psi-checks.js",
-    "choose": "node ./choose-page.js"
+    "choose": "node ./tests/choose-page.js"
   },
   "repository": {
     "type": "git",

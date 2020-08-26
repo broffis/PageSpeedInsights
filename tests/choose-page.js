@@ -2,16 +2,18 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const readline = require('readline-sync');
+const path = require('path');
 
 
 const timestamp = new Date().getTime();
 const reportsPath = path.resolve(process.cwd(), './reports');
+const performancePath = path.resolve(process.cwd(), './performance-data');
 
 dotenv.config()
 
 const api_key = process.env.PAGE_SPEED_INSIGHTS_API_KEY;
 
-const pageData = {
+const page_data = {
   page_url: '',
   cruxMetrics: {
     first_contentful_paint: '',
@@ -59,25 +61,40 @@ function run() {
   api_call(page_url, times)
     .then(() => {
       const cruxMetrics = {
-        "First Contentful Paint": pageData.cruxMetrics.first_contentful_paint,
-        "First Input Delay": pageData.cruxMetrics.first_input_delay
+        "First Contentful Paint": page_data.cruxMetrics.first_contentful_paint,
+        "First Input Delay": page_data.cruxMetrics.first_input_delay
       };
   
       const lighthouseMetrics = {
-        'First Contentful Paint': `${(pageData.lighthouse_metrics.first_contentful_paint.value / times).toFixed(2)} ${pageData.lighthouse_metrics.first_contentful_paint.label}`,
-        'Speed Index': `${(pageData.lighthouse_metrics.speed_index.value / times).toFixed(2)} ${pageData.lighthouse_metrics.speed_index.label}`,
-        'Time To Interactive': `${(pageData.lighthouse_metrics.time_to_interactive.value / times).toFixed(2)} ${pageData.lighthouse_metrics.time_to_interactive.label}`,
-        'First Meaningful Paint': `${(pageData.lighthouse_metrics.first_meaningful_paint.value / times).toFixed(2)} ${pageData.lighthouse_metrics.first_meaningful_paint.label}`,
-        'First CPU Idle': `${(pageData.lighthouse_metrics.first_cpu_idle.value / times).toFixed(2)} ${pageData.lighthouse_metrics.first_cpu_idle.label}`,
-        'Estimated Input Latency': `${(pageData.lighthouse_metrics.estimated_input_latency.value / times).toFixed(2)} ${pageData.lighthouse_metrics.estimated_input_latency.label}`,
+        'First Contentful Paint': `${(page_data.lighthouse_metrics.first_contentful_paint.value / times).toFixed(2)} ${page_data.lighthouse_metrics.first_contentful_paint.label}`,
+        'Speed Index': `${(page_data.lighthouse_metrics.speed_index.value / times).toFixed(2)} ${page_data.lighthouse_metrics.speed_index.label}`,
+        'Time To Interactive': `${(page_data.lighthouse_metrics.time_to_interactive.value / times).toFixed(2)} ${page_data.lighthouse_metrics.time_to_interactive.label}`,
+        'First Meaningful Paint': `${(page_data.lighthouse_metrics.first_meaningful_paint.value / times).toFixed(2)} ${page_data.lighthouse_metrics.first_meaningful_paint.label}`,
+        'First CPU Idle': `${(page_data.lighthouse_metrics.first_cpu_idle.value / times).toFixed(2)} ${page_data.lighthouse_metrics.first_cpu_idle.label}`,
+        'Estimated Input Latency': `${(page_data.lighthouse_metrics.estimated_input_latency.value / times).toFixed(2)} ${page_data.lighthouse_metrics.estimated_input_latency.label}`,
+      };
+
+      const lighthouseDataTotal = {
+        'Times run': times,
+        'First Contentful Paint': page_data.lighthouse_metrics.first_contentful_paint.value,
+        'Speed Index':page_data.lighthouse_metrics.speed_index.value,
+        'Time To Interactive': page_data.lighthouse_metrics.time_to_interactive.value,
+        'First Meaningful Paint': page_data.lighthouse_metrics.first_meaningful_paint.value,
+        'First CPU Idle': page_data.lighthouse_metrics.first_cpu_idle.value,
+        'Estimated Input Latency': page_data.lighthouse_metrics.estimated_input_latency.value,
       };
   
-      const initialContent = showInitialContent(pageData.page_url);
+      const initialContent = showInitialContent(page_data.page_url);
       const cruxMetricsContent = showCruxContent(cruxMetrics);
       const lighthouseContent = showLighthouseContent(lighthouseMetrics);
       const test_runner_content = `<h2>This was run ${times} times</h2>`;
       const finalContent = initialContent + cruxMetricsContent + lighthouseContent + test_runner_content;
+
+      const performanceData = {'Page': page_nickname, 'total_data': lighthouseDataTotal, 'avg_data': lighthouseMetrics};
+
       fs.writeFileSync(reportsPath + '/' + page_nickname + '-psi-' + timestamp + '.html', finalContent);
+      fs.writeFileSync(performancePath + '/' + page_nickname + '-performance-data-' + timestamp + '.json', JSON.stringify(performanceData));
+      console.log(performanceData);
     });
 }
 
@@ -88,42 +105,42 @@ const api_call =  async function (test_url, repeat) {
   await fetch(url)
     .then(response => response.json())
     .then(json => {
-      pageData.page_url = json.id;
+      page_data.page_url = json.id;
     
       switch(true) {
-        case pageData.cruxMetrics.first_contentful_paint === 'FAST':
-          pageData.cruxMetrics.first_contentful_paint = json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category;
-        case pageData.cruxMetrics.first_contentful_paint === 'AVERAGE' && json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category === 'SLOW':
-          pageData.cruxMetrics.first_contentful_paint = json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category;
+        case page_data.cruxMetrics.first_contentful_paint === 'FAST':
+          page_data.cruxMetrics.first_contentful_paint = json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category;
+        case page_data.cruxMetrics.first_contentful_paint === 'AVERAGE' && json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category === 'SLOW':
+          page_data.cruxMetrics.first_contentful_paint = json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category;
           break;
-        case pageData.cruxMetrics.first_contentful_paint === 'AVERAGE' && json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category === 'FAST':
-        case pageData.cruxMetrics.first_contentful_paint === 'SLOW':
+        case page_data.cruxMetrics.first_contentful_paint === 'AVERAGE' && json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category === 'FAST':
+        case page_data.cruxMetrics.first_contentful_paint === 'SLOW':
           break;
         default:
-          pageData.cruxMetrics.first_contentful_paint = json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category;
+          page_data.cruxMetrics.first_contentful_paint = json.loadingExperience.metrics.FIRST_CONTENTFUL_PAINT_MS.category;
       }
 
       switch(true) {
-        case pageData.cruxMetrics.first_input_delay === 'FAST':
-          pageData.cruxMetrics.first_input_delay = json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category;
-        case pageData.cruxMetrics.first_input_delay === 'AVERAGE' && json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category === 'SLOW':
-          pageData.cruxMetrics.first_input_delay = json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category;
+        case page_data.cruxMetrics.first_input_delay === 'FAST':
+          page_data.cruxMetrics.first_input_delay = json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category;
+        case page_data.cruxMetrics.first_input_delay === 'AVERAGE' && json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category === 'SLOW':
+          page_data.cruxMetrics.first_input_delay = json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category;
           break;
-        case pageData.cruxMetrics.first_input_delay === 'AVERAGE' && json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category === 'FAST':
-        case pageData.cruxMetrics.first_input_delay === 'SLOW':
+        case page_data.cruxMetrics.first_input_delay === 'AVERAGE' && json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category === 'FAST':
+        case page_data.cruxMetrics.first_input_delay === 'SLOW':
           break;
         default:
-          pageData.cruxMetrics.first_input_delay = json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category;
+          page_data.cruxMetrics.first_input_delay = json.loadingExperience.metrics.FIRST_INPUT_DELAY_MS.category;
       }
 
       const lighthouse = json.lighthouseResult;
 
-      pageData.lighthouse_metrics.first_contentful_paint.value += lighthouse.audits['first-contentful-paint'].numericValue;
-      pageData.lighthouse_metrics.speed_index.value += lighthouse.audits['speed-index'].numericValue;
-      pageData.lighthouse_metrics.time_to_interactive.value += lighthouse.audits['interactive'].numericValue;
-      pageData.lighthouse_metrics.first_meaningful_paint.value += lighthouse.audits['first-meaningful-paint'].numericValue;
-      pageData.lighthouse_metrics.first_cpu_idle.value += lighthouse.audits['first-cpu-idle'].numericValue;
-      pageData.lighthouse_metrics.estimated_input_latency.value += lighthouse.audits['estimated-input-latency'].numericValue;
+      page_data.lighthouse_metrics.first_contentful_paint.value += lighthouse.audits['first-contentful-paint'].numericValue;
+      page_data.lighthouse_metrics.speed_index.value += lighthouse.audits['speed-index'].numericValue;
+      page_data.lighthouse_metrics.time_to_interactive.value += lighthouse.audits['interactive'].numericValue;
+      page_data.lighthouse_metrics.first_meaningful_paint.value += lighthouse.audits['first-meaningful-paint'].numericValue;
+      page_data.lighthouse_metrics.first_cpu_idle.value += lighthouse.audits['first-cpu-idle'].numericValue;
+      page_data.lighthouse_metrics.estimated_input_latency.value += lighthouse.audits['estimated-input-latency'].numericValue;
 
       i++
     })

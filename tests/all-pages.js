@@ -2,10 +2,12 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const readline = require('readline-sync');
+const path = require('path');
 
 
 const timestamp = new Date().getTime();
 const reportsPath = path.resolve(process.cwd(), './reports');
+const performancePath = path.resolve(process.cwd(), './performance-data');
 
 dotenv.config()
 
@@ -79,14 +81,28 @@ function run() {
         'First CPU Idle': `${(page_data[page].lighthouse_metrics.first_cpu_idle.value / times).toFixed(2)} ${page_data[page].lighthouse_metrics.first_cpu_idle.label}`,
         'Estimated Input Latency': `${(page_data[page].lighthouse_metrics.estimated_input_latency.value / times).toFixed(2)} ${page_data[page].lighthouse_metrics.estimated_input_latency.label}`,
       };
+
+      const lighthouseDataTotal = {
+        'Times run': times,
+        'First Contentful Paint': page_data[page].lighthouse_metrics.first_contentful_paint.value,
+        'Speed Index':page_data[page].lighthouse_metrics.speed_index.value,
+        'Time To Interactive': page_data[page].lighthouse_metrics.time_to_interactive.value,
+        'First Meaningful Paint': page_data[page].lighthouse_metrics.first_meaningful_paint.value,
+        'First CPU Idle': page_data[page].lighthouse_metrics.first_cpu_idle.value,
+        'Estimated Input Latency': page_data[page].lighthouse_metrics.estimated_input_latency.value,
+      };
   
       const initialContent = showInitialContent(page_data[page].page_url);
       const cruxMetricsContent = showCruxContent(cruxMetrics);
       const lighthouseContent = showLighthouseContent(lighthouseMetrics);
       const test_runner_content = `<h1>This was run ${times} times</h1>`;
       const finalContent = initialContent + cruxMetricsContent + lighthouseContent + test_runner_content;
+
+      const performanceData = {'Page': page, 'total_data': lighthouseDataTotal, 'avg_data': lighthouseMetrics};
       
-      fs.writeFileSync(reportsPath + '/' + page + '-psi-' + timestamp + '.html', finalContent);
+      fs.writeFileSync(reportsPath + '/' + times + '-' + page + '-psi-' + timestamp + '.html', finalContent);
+      fs.writeFileSync(performancePath + '/' + page + '-performance-data-' + timestamp + '.json', JSON.stringify(performanceData));
+      console.log(performanceData);
     });
   }
   
