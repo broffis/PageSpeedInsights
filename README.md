@@ -10,7 +10,7 @@ Description: Run Googles Page Speed Insights API
   npm install
 ```
 3. Run the command `cp .env.example .env` to create a local `.env` file
-4. Visit the (Google Developers Credentials Page) [https://console.developers.google.com/apis/credentials] and create an API key. Paste this key into your `.env` file as the `PAGE_SPEED_INSIGHTS_API_KEY=`
+4. Visit the [Google Developers Credentials Page](https://console.developers.google.com/apis/credentials) and create an API key. Paste this key into your `.env` file as the `PAGE_SPEED_INSIGHTS_API_KEY=`
 
 5. Run the scripts in the `package.json` file
 
